@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<title>MoonLog · 交易复盘日记</title>
+<style>
+:root{--bg:#0a0f1e;--card:#141c30;--card2:#0d1424;--line:#243050;--txt:#e8edf6;--dim:#8b9bb4;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--acc:#60a5fa;--gold:#f5c542}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(180deg,#0a0f1e 0%,#0c1226 100%);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:96px;min-height:100vh}
+header{position:sticky;top:0;background:rgba(10,15,30,.92);backdrop-filter:blur(10px);padding:13px 15px 9px;border-bottom:1px solid var(--line);z-index:10}
+header h1{font-size:17px;display:flex;justify-content:space-between;align-items:center}
+header .sub{font-size:10.5px;color:var(--dim);margin-top:2px}
+main{padding:12px 13px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:11px}
+.card h2{font-size:13px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;color:var(--txt)}
+.card h2 .more{font-size:11px;color:var(--acc);font-weight:500}
+/* moon */
+.moonbox{display:flex;align-items:center;gap:16px}
+.moon{width:96px;height:96px;border-radius:50%;flex:none;position:relative;background:radial-gradient(circle at 35% 35%,#2a3554,#161f3a);box-shadow:0 0 22px rgba(245,197,66,.12);overflow:hidden}
+.moon .lit{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 35%,#f8d878,#f5c542)}
+.moon .shade{position:absolute;inset:0;border-radius:50%;background:#101830}
+.minfo{flex:1}
+.minfo .score{font-size:30px;font-weight:800}
+.minfo .phase{font-size:12px;color:var(--gold);margin-top:2px;font-weight:600}
+.minfo .cap{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.5}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:700}
+.badge.g{background:#0e2e22;color:var(--ok)}.badge.y{background:#2e2408;color:var(--warn)}.badge.r{background:#2e0e0e;color:var(--bad)}.badge.b{background:#0e1f2e;color:var(--acc)}
+/* insight grid */
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.icell{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px}
+.icell .v{font-size:21px;font-weight:800;margin-bottom:3px}
+.icell .k{font-size:10.5px;color:var(--dim);line-height:1.45}
+.icell .m{margin-top:6px}
+/* todo */
+.todo{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:0}
+.todo .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none;margin-top:6px}
+.todo .t{flex:1;font-size:12.5px;line-height:1.5}
+.todo .t small{display:block;color:var(--dim);font-size:10.5px;margin-top:2px}
+/* ladder */
+.ladder{margin-bottom:10px}
+.ladder .lh{font-size:11px;color:var(--dim);margin-bottom:5px;font-weight:600}
+.ladder .lrow{display:flex;gap:8px}
+.ladder .lcell{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center}
+.ladder .lcell b{font-size:17px;display:block}
+.ladder .lcell span{font-size:9.5px;color:var(--dim)}
+/* exec marks */
+.exrow{display:flex;gap:8px;margin-bottom:4px}
+.exrow .ex{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center}
+.exrow .ex b{font-size:16px;display:block}
+.exrow .ex span{font-size:9.5px;color:var(--dim)}
+/* forms */
+input,select,textarea{background:#0a1020;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px;font-size:13.5px;width:100%}
+.row{display:flex;gap:8px;margin-bottom:9px}.row>*{flex:1}
+.field{margin-bottom:9px}
+.field label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px}
+.btn{width:100%;border:0;border-radius:11px;padding:12px;font-size:14px;font-weight:700;background:var(--gold);color:#1a1408;margin-top:10px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--dim)}
+.btn.sm{padding:9px;font-size:12.5px}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th,td{padding:6px 3px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:600;font-size:10px}
+.tag{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700}
+.tag.A{background:#0e2e22;color:var(--ok)}.tag.B{background:#2e2408;color:var(--warn)}.tag.C{background:#2e0e0e;color:var(--bad)}
+.alert{border-left:4px solid var(--bad);background:#1d0f12;padding:10px 12px;border-radius:9px;font-size:12.5px;margin-bottom:8px;line-height:1.55}
+.alert.warn{border-color:var(--warn);background:#1d180d}
+.alert.ok{border-color:var(--ok);background:#0d1d15}
+.rule{font-size:12.5px;padding:8px 0;border-bottom:1px solid var(--line);line-height:1.55}
+.rule:last-child{border-bottom:0}
+.rule b{color:var(--bad)}
+.phil{font-size:12.5px;line-height:1.85}
+.phil .q{color:var(--gold);font-weight:700}
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(16,22,40,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;z-index:10}
+nav button{flex:1;border:0;background:transparent;color:var(--dim);padding:9px 0 13px;font-size:10px}
+nav button.on{color:var(--gold)}
+nav .ic{font-size:19px;display:block;margin-bottom:2px}
+.page{display:none}.page.on{display:block}
+#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#000d;padding:9px 16px;border-radius:20px;font-size:12.5px;display:none;z-index:99;color:#fff;max-width:88%}
+.stars{font-size:12px;color:var(--gold);letter-spacing:1px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌙 MoonLog <span class="date" id="clock"></span></h1>
+  <div class="sub">交易复盘日记 · 纪律评分分析 <span class="stars">★★★★☆</span></div>
+</header>
+<main>
+
+<!-- ===== 首页 ===== -->
+<div class="page on" id="p0">
+
+  <div class="card">
+    <h2>🌙 纪律执行分 <span class="more">近20笔</span></h2>
+    <div class="moonbox">
+      <div class="moon"><div class="lit" id="moonLit" style="clip-path:inset(0 0 0 50%)"></div><div class="shade" id="moonShade" style="clip-path:inset(0 50% 0 0)"></div></div>
+      <div class="minfo">
+        <div class="score" id="mScore">—</div>
+        <div class="phase" id="mPhase">记录交易后点亮月亮</div>
+        <div class="cap" id="mCap">纪律分 = 行为评分均值×10<br>不看盈亏，只看执行</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ 执行情况 <span class="more">近7天</span></h2>
+    <div class="exrow">
+      <div class="ex"><b id="xOk" style="color:var(--ok)">0</b><span>✓ 按规则</span></div>
+      <div class="ex"><b id="xBias" style="color:var(--warn)">0</b><span>⚠ 变形</span></div>
+      <div class="ex"><b id="xBad" style="color:var(--bad)">0</b><span>⊘ 违规</span></div>
+      <div class="ex"><b id="xStreak" style="color:var(--acc)">0</b><span>🔥 连对执行</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔔 待办提醒</h2><div id="todos"></div>
+  </div>
+
+  <div class="card">
+    <h2>💡 深度洞察 <span class="more">全部洞察</span></h2>
+    <div class="igrid">
+      <div class="icell"><div class="v" id="iScore">—</div><div class="k">纪律执行分<br>近20笔行为均值</div><div class="m" id="iScoreTag"></div></div>
+      <div class="icell"><div class="v" id="iUnity">—</div><div class="k">知行合一率<br>完美执行 ÷ 已复盘</div><div class="m" id="iUnityTag"></div></div>
+      <div class="icell"><div class="v" id="iEmo">—</div><div class="k">情绪单占比<br>FOMO / 报复交易</div><div class="m" id="iEmoTag"></div></div>
+      <div class="icell"><div class="v" id="iStop">—</div><div class="k">止损执行率<br>亏损时按规则止损</div><div class="m" id="iStopTag"></div></div>
+      <div class="icell"><div class="v" id="iRR">—</div><div class="k">盈亏比<br>平均盈利 ÷ 平均亏损</div><div class="m" id="iRRTag"></div></div>
+      <div class="icell"><div class="v" id="iPf">—</div><div class="k">盈利因子<br>总盈利 ÷ 总亏损</div><div class="m" id="iPfTag"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏆 近7天梯队</h2>
+    <div class="ladder"><div class="lh">第一梯队 · 行为质量</div>
+      <div class="lrow">
+        <div class="lcell"><b id="l1a">—</b><span>纪律执行分</span></div>
+        <div class="lcell"><b id="l1b">—</b><span>情绪单占比</span></div>
+      </div></div>
+    <div class="ladder"><div class="lh">第二梯队 · 盈利质量</div>
+      <div class="lrow">
+        <div class="lcell"><b id="l2a">—</b><span>盈亏比</span></div>
+        <div class="lcell"><b id="l2b">—</b><span>盈利因子</span></div>
+      </div></div>
+    <div class="ladder"><div class="lh">第三梯队 · 风险控制</div>
+      <div class="lrow">
+        <div class="lcell"><b id="l3a">—</b><span>止损执行率</span></div>
+        <div class="lcell"><b id="l3b">—</b><span>最大单笔亏损</span></div>
+      </div></div>
+  </div>
+
+</div>
+
+<!-- ===== 记录 ===== -->
+<div class="page" id="p1">
+  <div class="card"><h2>📝 记一笔交易</h2>
+    <div class="row">
+      <div class="field"><label>品种</label><input id="jSym" placeholder="BTC / ETH …"></div>
+      <div class="field"><label>方向</label><select id="jDir"><option>多</option><option>空</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>盈亏 ($)</label><input id="jPnl" type="number"></div>
+      <div class="field"><label>是否止损单</label><select id="jIsStop"><option value="0">否</option><option value="1">是（亏损离场）</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>止损执行了？</label><select id="jStopOk"><option value="1">✓ 按规则止损</option><option value="0">✗ 没执行/移动了</option></select></div>
+      <div class="field"><label>出场原因</label><select id="jWhy"><option>止盈</option><option>止损</option><option>信号出场</option><option>时间出场</option><option>手动</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>分类</label><select id="jType" onchange="togN()"><option value="A">A 完全按系统</option><option value="B">B 执行变形</option><option value="C">C 情绪单/系统外</option></select></div>
+      <div class="field"><label>情绪驱动？</label><select id="jEmo"><option value="0">否</option><option value="1">FOMO 追单</option><option value="2">报复单</option></select></div>
+    </div>
+    <div class="field"><label>行为评分 (1-10) —— 只评执行，不评盈亏</label><input id="jScore" type="number" min="1" max="10" value="8"></div>
+    <div id="noteBox" style="display:none">
+      <div class="field"><label>偏差/情绪说明（B/C 必填）</label><input id="jNote" placeholder="如：没等回踩就追 / 亏后想扳回来"></div>
+    </div>
+    <div class="field"><label>复盘写了？（影响知行合一率）</label><select id="jRev"><option value="1">已复盘</option><option value="0">没写</option></select></div>
+    <button class="btn" onclick="addT()">记录</button>
+  </div>
+
+  <div class="card"><h2>📖 日志</h2>
+    <table><tr><th>日期</th><th>品种</th><th>类</th><th>盈亏</th><th>分</th><th></th></tr><tbody id="tBody"></tbody></table>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn sm" onclick="expJ()">⬇ 导出</button>
+      <button class="btn sm ghost" onclick="document.getElementById('impF').click()">⬆ 导入</button>
+    </div>
+    <input type="file" id="impF" accept=".json" style="display:none" onchange="impJ(this)">
+    <button class="btn ghost" onclick="clr()">清空全部</button>
+    <div style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6">数据存本机浏览器，换设备前先导出。本页为纯静态应用，无服务器、无上传。</div>
+  </div>
+</div>
+
+<!-- ===== 洞察 ===== -->
+<div class="page" id="p2">
+  <div class="card"><h2>💡 全部洞察</h2><div id="allIns"></div></div>
+  <div class="card"><h2>🧠 MoonLog 怎么算分</h2>
+    <div class="rule"><b style="color:var(--gold)">纪律执行分（月亮）</b>：近 20 笔行为评分均值 ×10。<br>90+ 满月 → 75-89 盈凸月 → 60-74 半月 → 40-59 蛾眉月 → &lt;40 新月（黑暗时刻）</div>
+    <div class="rule"><b style="color:var(--gold)">知行合一率</b>：完美执行(A类且评分≥9) ÷ 已复盘笔数。<br>这个数字低，说明你"知道"和"做到"之间有条沟——复盘是在填沟。</div>
+    <div class="rule"><b style="color:var(--gold)">情绪单占比</b>：(FOMO + 报复单) ÷ 总笔数。&gt;30% = 风险红区。</div>
+    <div class="rule"><b style="color:var(--gold)">止损执行率</b>：亏损单里按规则止损的比例。这条必须 100%，没有讨价还价。</div>
+    <div class="rule"><b style="color:var(--gold)">梯队排列</b>：行为质量 → 盈利质量 → 风险控制。顺序是刻意的：行为在前，盈利在后。</div>
+  </div>
+  <div class="card"><h2>🌙 为什么用月亮</h2>
+    <div class="phil">月有阴晴圆缺，人有状态起伏。<br><br>
+    交易者的纪律不是恒定的——连赢后会膨胀，连亏后会变形。MoonLog 用月亮把这个"起伏"可视化：<br><br>
+    <span class="q">满月不是常态，回归半月就是进步。</span><br><br>
+    你不需要每天完美，你需要的是让月亮别掉进新月区——连续 3 天新月，就该停下休息了。</div>
+  </div>
+</div>
+
+<!-- ===== 军规 ===== -->
+<div class="page" id="p3">
+  <div class="card"><h2>📜 MoonLog 纪律军规</h2>
+    <div class="rule">1. <b>只讲行为，不讲结果</b> —— 盈亏是市场给的，评分是你自己的</div>
+    <div class="rule">2. <b>先存己，再谋身</b> —— 存己是 1，谋身是后面的 0</div>
+    <div class="rule">3. <b>止损执行率必须 100%</b> —— 这一条破坏，其他全部作废</div>
+    <div class="rule">4. <b>情绪单 &gt;30% 停机三天</b> —— FOMO 和报复是账户的两个刺客</div>
+    <div class="rule">5. <b>每天复盘</b> —— 不复盘的交易不进统计（知行合一率的分母）</div>
+    <div class="rule">6. <b>连亏 3 单停一天，连亏 5 单停一周</b></div>
+    <div class="rule">7. <b>月亮掉进新月区 → 强制休息</b> —— 状态不好不交易</div>
+    <div class="rule">8. <b>大盈出金</b> —— 落袋的才是利润</div>
+  </div>
+  <div class="card"><h2>⚖️ 只讲行为，不讲结果</h2>
+    <div class="phil">一笔亏损但完全按规则执行的交易，是<b>好交易</b>——它给统计样本贡献了正确的数据。<br><br>
+    一笔盈利但情绪驱动的交易，是<b>坏交易</b>——它强化了坏习惯，用利润喂养了未来的亏损。<br><br>
+    <span class="q">MoonLog 的一切设计都基于这个价值观：行为评分 &gt; 盈亏金额。</span><br><br>
+    月亮圆缺，只跟你的执行有关，跟市场无关。</div>
+  </div>
+</div>
+
+</main>
+<nav>
+  <button class="on" onclick="setPage(0,this)"><span class="ic">🌙</span>首页</button>
+  <button onclick="setPage(1,this)"><span class="ic">📝</span>记录</button>
+  <button onclick="setPage(2,this)"><span class="ic">💡</span>洞察</button>
+  <button onclick="setPage(3,this)"><span class="ic">📜</span>军规</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+const today=new Date().toISOString().slice(0,10);
+let S=JSON.parse(localStorage.getItem("moonlog")||"{}");
+if(!S.trades)S.trades=[];
+function save(){localStorage.setItem("moonlog",JSON.stringify(S))}
+function esc(s){return String(s).replace(/</g,"&lt;")}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",1600);}
+
+function phaseOf(sc){
+  if(sc>=90)return{name:"满月 🌕",lit:0,desc:"状态巅峰，但小心满月后的回落"};
+  if(sc>=75)return{name:"盈凸月 🌔",lit:25,desc:"良好执行，接近最佳状态"};
+  if(sc>=60)return{name:"半月 🌓",lit:50,desc:"及格线，有明显的执行漏洞"};
+  if(sc>=40)return{name:"蛾眉月 🌒",lit:75,desc:"纪律正在流失，警惕"};
+  return{name:"新月 🌑",lit:100,desc:"黑暗时刻 —— 强制休息，停止交易"};
+}
+function addT(){
+  const t={d:today,sym:document.getElementById("jSym").value||"—",dir:document.getElementById("jDir").value,
+    pnl:+document.getElementById("jPnl").value||0,
+    isStop:document.getElementById("jIsStop").value==="1",
+    stopOk:document.getElementById("jStopOk").value==="1",
+    why:document.getElementById("jWhy").value,type:document.getElementById("jType").value,
+    emo:+document.getElementById("jEmo").value,score:+document.getElementById("jScore").value||0,
+    rev:document.getElementById("jRev").value==="1",note:document.getElementById("jNote").value};
+  if(!document.getElementById("jPnl").value){toast("填盈亏金额");return}
+  if(t.type!=="A"&&!t.note){toast("B/C 类必须写说明");return}
+  S.trades.unshift(t);save();
+  // 重置表单，避免上笔的选择带到下一笔
+  document.getElementById("jPnl").value="";document.getElementById("jNote").value="";
+  document.getElementById("jSym").value="";
+  document.getElementById("jType").value="A";
+  document.getElementById("jEmo").value="0";
+  document.getElementById("jIsStop").value="0";
+  document.getElementById("jStopOk").value="1";
+  document.getElementById("jRev").value="1";
+  document.getElementById("jScore").value=8;
+  togN();
+  render();toast("已记录 ✓");
+}
+function delT(i){S.trades.splice(i,1);save();render();}
+function clr(){if(confirm("清空全部记录？")){S.trades=[];save();render();}}
+function togN(){document.getElementById("noteBox").style.display=document.getElementById("jType").value==="A"?"none":"";}
+function render(){
+  const T=S.trades;
+  const last20=T.slice(0,20);
+  const sc=last20.length?last20.reduce((a,t)=>a+t.score,0)/last20.length*10:0;
+  const ph=phaseOf(sc);
+  document.getElementById("mScore").textContent=last20.length?sc.toFixed(0):"—";
+  document.getElementById("mScore").style.color=sc>=75?"var(--ok)":sc>=60?"var(--warn)":last20.length?"var(--bad)":"var(--dim)";
+  document.getElementById("mPhase").textContent=last20.length?ph.name:"记录交易后点亮月亮";
+  document.getElementById("mCap").innerHTML=last20.length?ph.desc+"<br>纪律分 = 行为评分均值×10，不看盈亏只看执行":"纪律分 = 行为评分均值×10<br>不看盈亏，只看执行";
+  // moon clip: lit side grows with score. Use horizontal clip: right portion lit when score high
+  const litPct=sc; // 0..100
+  document.getElementById("moonLit").style.clipPath="inset(0 "+(100-litPct)+"% 0 0)";
+  document.getElementById("moonShade").style.clipPath="inset(0 0 0 "+litPct+"%)";
+  // 7-day
+  const wk=Date.now()-7*864e5;
+  const W=T.filter(t=>new Date(t.d).getTime()>=wk);
+  document.getElementById("xOk").textContent=W.filter(t=>t.type==="A").length;
+  document.getElementById("xBias").textContent=W.filter(t=>t.type==="B").length;
+  document.getElementById("xBad").textContent=W.filter(t=>t.type==="C").length;
+  let st=0;for(const t of T){if(t.type==="A")st++;else break}
+  document.getElementById("xStreak").textContent=st;
+  // todos
+  const todos=[];
+  const daysSince=(d)=>Math.floor((Date.now()-new Date(d).getTime())/864e5);
+  if(T.length){
+    const gap=Math.floor((Date.now()-new Date(T[0].d).getTime())/864e5);
+    if(gap>=3)todos.push({t:"已 "+gap+" 天没记录交易，补上最近的复盘",s:"连续记录是纪律的地基"});
+    const emoN=W.filter(t=>t.emo>0).length;
+    if(W.length&&emoN/W.length>0.3)todos.push({t:"近7天情绪单 "+emoN+" 笔（"+Math.round(emoN/W.length*100)+"%）—— 超30%，停机自检",s:"FOMO 和报复是账户的两个刺客"});
+    let ds=0;for(const t of T){if(t.pnl<0)ds++;else break}
+    if(ds>=3)todos.push({t:"已连亏 "+ds+" 单 —— 按军规强制休息",s:"连亏不停手，是爆仓的第一步"});
+    const noRev=T.filter(t=>!t.rev).length;
+    if(noRev>=3)todos.push({t:noRev+" 笔交易没写复盘 —— 知行合一率的分母在流失",s:"不复盘的交易不进统计"});
+  } else todos.push({t:"还没有记录 —— 记下第一笔交易",s:"月亮会随着你的执行点亮"});
+  document.getElementById("todos").innerHTML=todos.map(x=>'<div class="todo"><div class="dot"></div><div class="t">'+esc(x.t)+"<small>"+esc(x.s)+"</small></div></div>").join("");
+  // insights
+  const wins=T.filter(t=>t.pnl>0),losses=T.filter(t=>t.pnl<0);
+  const setI=(id,v,tagid,txt,cls)=>{document.getElementById(id).textContent=v;const e=document.getElementById(tagid);e.innerHTML=txt?'<span class="badge '+cls+'">'+txt+"</span>":"";};
+  setI("iScore",last20.length?sc.toFixed(0):"—","iScoreTag",last20.length?(sc>=80?"优秀":sc>=60?"良好":"需改进"):"",(sc>=80?"g":sc>=60?"y":"r"));
+  let unity=0;if(T.length){const revT=T.filter(t=>t.rev);unity=revT.length?revT.filter(t=>t.type==="A"&&t.score>=9).length/revT.length*100:0;}
+  setI("iUnity",T.length?unity.toFixed(0)+"%":"—","iUnityTag",T.length?(unity>=70?"优秀":unity>=40?"一般":"有落差"):"",(unity>=70?"g":unity>=40?"y":"r"));
+  const emoN=T.filter(t=>t.emo>0).length;
+  const emoP=T.length?emoN/T.length*100:0;
+  setI("iEmo",T.length?emoP.toFixed(0)+"%":"—","iEmoTag",T.length?(emoP<=15?"健康":emoP<=30?"注意":"风险"):"",(emoP<=15?"g":emoP<=30?"y":"r"));
+  const lossT=T.filter(t=>t.isStop);
+  const stopR=lossT.length?lossT.filter(t=>t.stopOk).length/lossT.length*100:0;
+  setI("iStop",lossT.length?stopR.toFixed(0)+"%":"—","iStopTag",lossT.length?(stopR>=90?"优秀":stopR>=70?"注意":"危险"):"",(stopR>=90?"g":stopR>=70?"y":"r"));
+  const avgW=wins.length?wins.reduce((a,t)=>a+t.pnl,0)/wins.length:0;
+  const avgL=losses.length?Math.abs(losses.reduce((a,t)=>a+t.pnl,0)/losses.length):0;
+  const rr=avgL?avgW/avgL:0;
+  setI("iRR",rr?rr.toFixed(2):"—","iRRTag",rr?(rr>=2?"优秀":rr>=1.5?"及格":"偏弱"):"",(rr>=2?"g":rr>=1.5?"y":"r"));
+  const pf=avgL&&wins.length&&losses.length?(avgW*wins.length)/(avgL*losses.length):0;
+  setI("iPf",pf?pf.toFixed(2):"—","iPfTag",pf?(pf>=1.5?"优秀":pf>=1.3?"良好":"负期望"):"",(pf>=1.5?"g":pf>=1.3?"y":"r"));
+  // ladder
+  document.getElementById("l1a").textContent=last20.length?sc.toFixed(0):"—";
+  document.getElementById("l1b").textContent=T.length?emoP.toFixed(0)+"%":"—";
+  document.getElementById("l2a").textContent=rr?rr.toFixed(1):"—";
+  document.getElementById("l2b").textContent=pf?pf.toFixed(2):"—";
+  document.getElementById("l3a").textContent=lossT.length?stopR.toFixed(0)+"%":"—";
+  const wl=losses.length?Math.min(...losses.map(t=>t.pnl)):0;
+  document.getElementById("l3b").textContent=wl?wl.toFixed(0):"—";
+  // all insights page
+  document.getElementById("allIns").innerHTML=T.length?
+    '<div class="phil">共 '+T.length+' 笔记录。胜率 '+(wins.length/T.length*100).toFixed(0)+'% ｜ 净盈亏 '+(T.reduce((a,t)=>a+t.pnl,0)>=0?"+":"")+T.reduce((a,t)=>a+t.pnl,0).toFixed(2)+' ｜ A类占比 '+(T.filter(t=>t.type==="A").length/T.length*100).toFixed(0)+'%<br><br>'+
+    (emoP>30?'<span style="color:var(--bad)">情绪单占比 '+emoP.toFixed(0)+'% —— 当前最大的洞。每笔情绪单平均吃掉你 '+(emoN?Math.abs(T.filter(t=>t.emo>0).reduce((a,t)=>a+t.pnl,0)/emoN).toFixed(1):0)+'，一年下来这笔钱够你买很多个月亮。</span>':
+     unity<40?'<span style="color:var(--warn)">知行合一率只有 '+unity.toFixed(0)+'% —— 你知道的比你做到的多。差距就是利润。</span>':
+     stopR<100&&lossT.length?'<span style="color:var(--warn)">止损执行率 '+stopR.toFixed(0)+'% —— 那一次没执行的止损，就是账户的最大隐患。</span>':
+     '<span style="color:var(--ok)">各项指标健康。保持节奏，月亮不会说谎。</span>')
+    :'<div style="color:var(--dim);font-size:12.5px">记录交易后，这里会出现你的第一份洞察。</div>';
+  // table
+  document.getElementById("tBody").innerHTML=T.map((t,i)=>
+    '<tr><td>'+t.d.slice(5)+'</td><td>'+esc(t.sym)+'</td><td><span class="tag '+t.type+'">'+t.type+'</span></td><td style="color:'+(t.pnl>=0?"var(--ok)":"var(--bad)")+'">'+(t.pnl>=0?"+":"")+t.pnl+'</td><td>'+t.score+'</td><td><button onclick="delT('+i+')" style="background:none;border:0;color:var(--dim)">✕</button></td></tr>').join("");
+}
+function setTab(i){[0,1,2,3].forEach(x=>document.getElementById("p"+x).classList.toggle("on",x===i));
+  document.querySelectorAll("nav button").forEach((b,j)=>b.classList.toggle("on",j===i));}
+function expJ(){const b=new Blob([JSON.stringify({v:1,data:S},null,1)],{type:"application/json"});
+  const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="moonlog-"+today+".json";a.click();URL.revokeObjectURL(u);toast("已导出");}
+function impJ(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=e=>{try{const o=JSON.parse(e.target.result),d=o.data||o;
+    if(!d.trades)throw 0;
+    if(!confirm("导入将覆盖当前 "+S.trades.length+" 笔，确定？"))return;
+    S.trades=d.trades;save();render();toast("导入成功 ✓");}catch(x){toast("格式不正确")}};
+  rd.readAsText(f);inp.value="";}
+function tick(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});}
+togN();render();tick();setInterval(tick,15000);
+</script>
+</body>
+</html>
